@@ -1,13 +1,14 @@
-import os
+import os.path
 import time
 import win32api
-import customtkinter as ctk
+from ctk_components import *
 from tkinter import StringVar
 from PIL import Image
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from shutil import copytree
 import threading
+from EncryptPassword import *
 
 
 class JExplorer:
@@ -34,6 +35,8 @@ class JExplorer:
     left_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "left.png"), dark_image=Image.open(iconsPath + "left.png"), size=(25, 25))
     right_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "right.png"), dark_image=Image.open(iconsPath + "right.png"), size=(25, 25))
     home_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "home.png"), dark_image=Image.open(iconsPath + "home.png"), size=(25, 25))
+    lock_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "lock.png"), dark_image=Image.open(iconsPath + "lock.png"), size=(25, 32))
+    unlock_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "unlock.png"), dark_image=Image.open(iconsPath + "unlock.png"), size=(25, 32))
     currentItems = []
     isCopy = False
     copyitem = None
@@ -277,7 +280,7 @@ class JExplorer:
         except:
             CTkMessagebox(self.top, title="Path error", message="Wrong path or invalid syntax!", icon="cancel")
 
-    def gui(self):
+    def Browser(self):
         self.top = ctk.CTk()
         self.top.minsize(width=800, height=600)
         self.top.title("J-Explorer")
@@ -327,6 +330,16 @@ class JExplorer:
                                            width=20, corner_radius=25, command=lambda:self.delete(self.buttonPressed))
         self.delete_button.pack(side="right", anchor="e")
         CTkToolTip(self.delete_button, message="Delete")
+
+        self.lock_data = ctk.CTkButton(self.ubber_right_tools_frame, text="", image=self.lock_icon, fg_color=self.ubber_right_tools_frame.cget("fg_color"),
+                                           width=20, corner_radius=25)
+        self.lock_data.pack(side="right", anchor="e")
+        CTkToolTip(self.lock_data, message="Secure")
+
+        self.un_lock_data = ctk.CTkButton(self.ubber_right_tools_frame, text="", image=self.unlock_icon, fg_color=self.ubber_right_tools_frame.cget("fg_color"),
+                                       width=20, corner_radius=25)
+        self.un_lock_data.pack(side="right", anchor="e")
+        CTkToolTip(self.un_lock_data, message="Un Secure")
 
         self.selected_label = ctk.CTkLabel(self.top, text="", width=785, height=20, fg_color=self.top.cget("fg_color"), font=("roboto", 14), compound="left")
         self.selected_label.grid(row=1, column=0, pady=2)
@@ -404,7 +417,66 @@ class JExplorer:
             else:
                 os.startfile(self.absPath + self.remove_newline(btn))
 
+    def do_login(self):
+        invalid = "False"
+        if os.path.exists(Details.startUpFile):
+            if init_pass_to_compare(self.password_input.get()) == get_password():
+                open(Details.startUpFile, 'w').write("3ard el shazly el bambazz begneeeh")
+            else:
+                invalid = "True"
+        else:
+            if self.password_input1.get() == self.password_input2.get():
+                if len(self.password_input2.get()) >= 8:
+                    open(Details.startUpFile, 'w').write("3ard el shazly el bambazz begneeeh")
+                    new_password(self.password_input1.get())
+                else:
+                    invalid = "Weak"
+            else:
+                invalid = "True"
+
+        if invalid == "Weak":
+            CTkMessagebox(title="Weak password!", message="Type stronger password!", icon="cancel")
+        elif invalid == "True":
+            CTkMessagebox(title="Password error!", message="A7a ya zmiily", icon="cancel")
+        else:
+            self.login.destroy()
+            self.Browser()
+
+
+    def Login(self):
+        self.login = ctk.CTk()
+        self.login.title("Login")
+        if os.path.exists(Details.startUpFile):
+            enter_password = ctk.CTkLabel(self.login, text="Enter password", font=("roboto", 22, "bold"))
+            enter_password.pack(pady=20, padx=40)
+
+            self.password_input = CTkInput(self.login, width=300, height=35, border_width=1)
+            self.password_input.pack(pady=10, padx=10)
+            self.password_input.password_input()
+
+        else:
+            enter_password = ctk.CTkLabel(self.login, text="Enter and confirm password", font=("roboto", 22, "bold"))
+            enter_password.pack(pady=20, padx=40)
+
+            self.password_input1 = CTkInput(self.login, width=300, height=35, border_width=1)
+            self.password_input1.pack(pady=10, padx=10)
+            self.password_input1.password_input()
+
+            self.password_input2 = CTkInput(self.login, width=300, height=35, border_width=1)
+            self.password_input2.pack(pady=10, padx=10)
+            self.password_input2.password_input()
+
+        save_btn = ctk.CTkButton(self.login, text="Login", font=("roboto", 16, "bold"), width=150, corner_radius=15, command=self.do_login)
+        save_btn.pack(pady=(10, 20), padx=10)
+
+        self.login.update()
+        self.login.minsize(self.login.winfo_width(), self.login.winfo_height())
+        x_cordinate = int((self.login.winfo_screenwidth() / 2) - (self.login.winfo_width() / 2))
+        y_cordinate = int((self.login.winfo_screenheight() / 2) - (self.login.winfo_height() / 2))
+        self.login.geometry("{}+{}".format(x_cordinate, y_cordinate - 50))
+        self.login.mainloop()
+
 
 if __name__ == "__main__":
     wf = JExplorer()
-    wf.gui()
+    wf.Login()

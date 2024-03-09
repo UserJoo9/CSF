@@ -115,16 +115,12 @@ if __name__ == "__main__":
     # for item in scanRecurse(directory):
         
     #     filePath = Path(item)
-    #     fileType = filePath.suffix.lower()
-
     #     encrypt(filePath, pubKey)
-    
+
     for item in scanRecurse(directory):
 
         filePath = Path(item)
-        fileType = filePath.suffix.lower()
 
-            
         decrypt(filePath, 'private.pem')
 
 
