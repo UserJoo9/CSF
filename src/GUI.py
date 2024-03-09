@@ -13,6 +13,7 @@ from EncryptPassword import *
 
 class JExplorer:
 
+    ctk.set_appearance_mode("dark")
     widthIconsLength = 7
     lastWidthIconsLength = 0
     absPath = r""
