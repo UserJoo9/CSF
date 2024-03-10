@@ -3,8 +3,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
 from pathlib import Path
 
-with open('public.pem', 'rb') as f:
-    pubKey = f.read()
+
 
 
 def scanRecurse(baseDir):
@@ -55,16 +54,14 @@ def encrypt(dataFile, publicKey):
     print('Encrypted file saved to ' + encryptedFile)
 
 
-def decrypt(dataFile, privateKeyFile):
+def decrypt(dataFile, privateKey):
     '''
     use EAX mode to allow detection of unauthorized modifications
     '''
 
     # read private key from file
-    with open(privateKeyFile, 'rb') as f:
-        privateKey = f.read()
         # create private key object
-        key = RSA.import_key(privateKey)
+    key = RSA.import_key(privateKey)
 
     # read data from file
     with open(dataFile, 'rb') as f:
@@ -112,10 +109,6 @@ def decrypt(dataFile, privateKeyFile):
 if __name__ == "__main__":
 
     directory = 'test-dir'
-    # for item in scanRecurse(directory):
-        
-    #     filePath = Path(item)
-    #     encrypt(filePath, pubKey)
 
     for item in scanRecurse(directory):
 

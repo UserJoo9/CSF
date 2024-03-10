@@ -9,6 +9,9 @@ from CTkMessagebox import CTkMessagebox
 from shutil import copytree
 import threading
 from EncryptPassword import *
+from ProtectionEngine import scanRecurse, encrypt, decrypt
+from pathlib import Path
+from HideManager import hide_file, hide_dir, unhide_file, unhide_dir
 
 
 class JExplorer:
@@ -283,10 +286,49 @@ class JExplorer:
 
     def secure(self, dest):
         destination = self.absPath + dest
+        with open('database/publicKey.pem', 'rb') as f:
+            pubKey = f.read()
+
         if os.path.isdir(destination):
-            print("dir ", destination)
+            for item in scanRecurse(destination):
+
+                filePath = Path(item)
+                encrypt(filePath, pubKey)
+            # Refresh GUI
+            self.layerSearch(self.absPath)
+            self.selected_label.configure(text="", image=self.small_folder_icon)
+            print("Directory Locked")
         else:
-            print("file ", destination)
+            filePath = Path(destination)
+            encrypt(filePath, pubKey)
+            # Refresh GUI
+            self.layerSearch(self.absPath)
+            self.selected_label.configure(text="", image=self.small_folder_icon)
+            print("File Locked")
+    
+    def unlock(self, dest):
+        destination = self.absPath + dest
+        with open('database/privateKey.pem', 'rb') as f:
+            privateKey = f.read()
+
+        if os.path.isdir(destination):
+            for item in scanRecurse(destination):
+                filePath = Path(item)
+                decrypt(filePath, privateKey)
+            # Refresh GUI
+            self.layerSearch(self.absPath)
+            self.selected_label.configure(text="", image=self.small_folder_icon)
+            print("Directory Unlocked")
+
+        else:
+            filePath = Path(destination)
+            decrypt(destination, privateKey)
+            # Refresh GUI
+            self.layerSearch(self.absPath)
+            self.selected_label.configure(text="", image=self.small_folder_icon)
+            print("File Unlocked")
+
+
 
     def Browser(self):
         self.top = ctk.CTk()
@@ -345,7 +387,7 @@ class JExplorer:
         CTkToolTip(self.lock_data, message="Secure")
 
         self.un_lock_data = ctk.CTkButton(self.ubber_right_tools_frame, text="", image=self.unlock_icon, fg_color=self.ubber_right_tools_frame.cget("fg_color"),
-                                       width=20, corner_radius=25)
+                                       width=20, corner_radius=25, command= lambda: self.unlock(self.selected_label.cget("text")))
         self.un_lock_data.pack(side="right", anchor="e")
         CTkToolTip(self.un_lock_data, message="Un Secure")
 
