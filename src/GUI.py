@@ -188,11 +188,13 @@ class SecureExplorer:
         return self.absPath
 
     def return_forward(self, *args):
+        print(">>>> 1 ", self.absPath)
+        print(">>>> 2 ", self.lastAbsPath)
         if self.lastAbsPath == r"" or self.absPath == r"" or self.lastAbsPath == self.absPath or len(self.absPath) > len(self.lastAbsPath):
             pass
         else:
             self.clear_window()
-            self.layerSearch(self.lastAbsPath)
+            self.layerSearch(self.lastAbsPath, forward=True)
             self.display_path(self.lastAbsPath)
             forward = self.lastAbsPath.split("\\")
             for _ in forward:
@@ -229,22 +231,25 @@ class SecureExplorer:
         self.display_path("Home")
         self.reset_selected()
 
-    def layerSearch(self, dest):
+    def layerSearch(self, dest, forward=False):
         columsNO = 0
         rowNO = 0
         try:
             newItems = os.listdir(dest)
             self.clear_window()
+            gotoPath = self.absPath
+            if forward:
+                gotoPath = self.lastAbsPath
             for dir in range(0, len(newItems)):
                 if newItems[dir] in self.badopitons:
                     continue
-                if os.path.isfile(self.absPath + newItems[dir]) or os.path.isfile(self.lastAbsPath + newItems[dir]):
-                    if is_file_hidden(self.absPath + newItems[dir]) and newItems[dir].endswith(encryptionExtension):
+                if os.path.isfile(gotoPath + newItems[dir]) or os.path.isfile(gotoPath + newItems[dir]):
+                    if is_file_hidden(gotoPath + newItems[dir]) and newItems[dir].endswith(encryptionExtension):
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.secure_file_icon)
                     else:
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.file_icon)
                 else:
-                    if is_dir_hidden(self.absPath + newItems[dir]):
+                    if is_dir_hidden(gotoPath + newItems[dir]):
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.secure_folder_icon)
                     else:
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.folder_icon)
@@ -252,7 +257,7 @@ class SecureExplorer:
                 if columsNO >= self.widthIconsLength:
                     columsNO = 0
                     rowNO += 1
-            self.display_path(self.absPath)
+            self.display_path(gotoPath)
         except PermissionError:
             CTkMessagebox(self.top, title="Access error!", message=f"Access is denied", icon="cancel")
             self.return_back()
@@ -329,7 +334,7 @@ class SecureExplorer:
     
     def unlock(self, dest):
         if any(dest == i for i in self.listDisks()):
-            CTkMessagebox(title="Action error!", message="Select a file or folder to unsecure it.", icon="cancel")
+            CTkMessagebox(title="Action error!", message="Select a secured file or folder to unsecure it.", icon="cancel")
             return -1
         destination = self.absPath + dest
         if os.path.isfile(destination) and not destination.endswith(encryptionExtension):
