@@ -39,7 +39,11 @@ def encrypt(dataFile, publicKey):
     cipher_extension = AES.new(sessionKey, AES.MODE_EAX)
     encrypted_extension, tag_extension = cipher_extension.encrypt_and_digest(bytes_extension)
 
-    fileName = dataFile.split(extension)[0]
+    try:
+        fileName = dataFile.split(extension)[0]
+    except:
+        print("Unsupported File Type")
+        return -1
 
 
     encryptedFile = fileName + '.0xAtlas2p0'
