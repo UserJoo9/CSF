@@ -11,7 +11,7 @@ import threading
 from EncryptPassword import *
 from ProtectionEngine import scanRecurse, encrypt, decrypt, encryptionExtension
 from pathlib import Path
-from HideManager import hide_file, hide_dir, unhide_file, unhide_dir, is_file_hidden, is_dir_hidden
+from HideManager import hide_file, hide_dir, unhide_file, unhide_dir, is_file_hidden, is_dir_hidden, has_secured_files
 
 
 class SecureExplorer:
@@ -249,7 +249,7 @@ class SecureExplorer:
                     else:
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.file_icon)
                 else:
-                    if is_dir_hidden(gotoPath + newItems[dir]):
+                    if is_dir_hidden(gotoPath + newItems[dir]) and has_secured_files(gotoPath + newItems[dir]):
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.secure_folder_icon)
                     else:
                         self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.folder_icon)
@@ -311,6 +311,8 @@ class SecureExplorer:
         if os.path.isdir(destination):
             for item in scanRecurse(destination):
                 filePath = Path(item)
+                if str(filePath).endswith(encryptionExtension):
+                    continue
                 reply = encrypt(filePath, pubKey)
                 hide_dir(destination)
                 if reply == -1:
