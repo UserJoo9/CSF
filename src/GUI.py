@@ -281,6 +281,13 @@ class JExplorer:
         except:
             CTkMessagebox(self.top, title="Path error", message="Wrong path or invalid syntax!", icon="cancel")
 
+    def secure(self, dest):
+        destination = self.absPath + dest
+        if os.path.isdir(destination):
+            print("dir ", destination)
+        else:
+            print("file ", destination)
+
     def Browser(self):
         self.top = ctk.CTk()
         self.top.minsize(width=800, height=600)
@@ -333,7 +340,7 @@ class JExplorer:
         CTkToolTip(self.delete_button, message="Delete")
 
         self.lock_data = ctk.CTkButton(self.ubber_right_tools_frame, text="", image=self.lock_icon, fg_color=self.ubber_right_tools_frame.cget("fg_color"),
-                                           width=20, corner_radius=25)
+                                           width=20, corner_radius=25, command= lambda: self.secure(self.selected_label.cget("text")))
         self.lock_data.pack(side="right", anchor="e")
         CTkToolTip(self.lock_data, message="Secure")
 
@@ -454,6 +461,7 @@ class JExplorer:
             self.password_input = CTkInput(self.login, width=300, height=35, border_width=1)
             self.password_input.pack(pady=10, padx=10)
             self.password_input.password_input()
+            self.password_input.bind("<Return>", self.do_login)
 
         else:
             enter_password = ctk.CTkLabel(self.login, text="Enter and confirm password", font=("roboto", 22, "bold"))
@@ -462,10 +470,12 @@ class JExplorer:
             self.password_input1 = CTkInput(self.login, width=300, height=35, border_width=1)
             self.password_input1.pack(pady=10, padx=10)
             self.password_input1.password_input()
+            self.password_input1.bind("<Return>", self.do_login)
 
             self.password_input2 = CTkInput(self.login, width=300, height=35, border_width=1)
             self.password_input2.pack(pady=10, padx=10)
             self.password_input2.password_input()
+            self.password_input2.bind("<Return>", self.do_login)
 
         save_btn = ctk.CTkButton(self.login, text="Login", font=("roboto", 16, "bold"), width=150, corner_radius=15, command=self.do_login)
         save_btn.pack(pady=(10, 20), padx=10)
@@ -480,4 +490,4 @@ class JExplorer:
 
 if __name__ == "__main__":
     wf = JExplorer()
-    wf.Login()
+    wf.Browser()
