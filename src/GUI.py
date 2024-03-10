@@ -293,6 +293,9 @@ class SecureExplorer:
             CTkMessagebox(self.top, title="Path error", message="Wrong path or invalid syntax!", icon="cancel")
 
     def secure(self, dest):
+        if any(dest == i for i in self.listDisks()):
+            CTkMessagebox(title="Action error!", message="Select a file or folder to secure it.", icon="cancel")
+            return -1
         destination = self.absPath + dest
         with open('database/publicKey.pem', 'rb') as f:
             pubKey = f.read()
@@ -325,6 +328,9 @@ class SecureExplorer:
             print("File Locked")
     
     def unlock(self, dest):
+        if any(dest == i for i in self.listDisks()):
+            CTkMessagebox(title="Action error!", message="Select a file or folder to unsecure it.", icon="cancel")
+            return -1
         destination = self.absPath + dest
         if os.path.isfile(destination) and not destination.endswith(encryptionExtension):
             CTkMessagebox(title="File type error!", message="File is not valid to unsecure", icon="cancel")
