@@ -6,7 +6,7 @@ from tkinter import StringVar
 from PIL import Image
 from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
-from shutil import copytree
+from shutil import copytree, rmtree
 import threading
 from EncryptPassword import *
 from ProtectionEngine import scanRecurse, encrypt, decrypt, encryptionExtension
@@ -14,7 +14,7 @@ from pathlib import Path
 from HideManager import hide_file, hide_dir, unhide_file, unhide_dir, is_file_hidden, is_dir_hidden
 
 
-class JExplorer:
+class SecureExplorer:
 
     ctk.set_appearance_mode("dark")
     widthIconsLength = 7
@@ -144,7 +144,7 @@ class JExplorer:
                 if CTkMessagebox(self.top, title="Warning!", message=f"You will delete '{item}'\nAre you sure!!", option_1="Ok!", option_2="Cancel", icon="cancel").get() == "Ok!":
                     if os.path.isdir(itempath):
                         try:
-                            os.rmdir(itempath)
+                            rmtree(itempath)
                         except OSError:
                             CTkMessagebox(self.top, title="Access error!", message=f"Can't delete, maybe folder is not empty!", icon="cancel")
                     else:
@@ -357,7 +357,7 @@ class JExplorer:
     def Browser(self):
         self.top = ctk.CTk()
         self.top.minsize(width=800, height=600)
-        self.top.title("J-Explorer")
+        self.top.title("Secure Explorer")
         self.top.bind("<Alt-Left>", self.return_back)
         self.top.bind("<Alt-Right>", self.return_forward)
         self.top.bind("<Delete>", lambda e:self.delete(self.buttonPressed))
@@ -544,7 +544,12 @@ class JExplorer:
             self.password_input2.bind("<Return>", self.do_login)
 
         save_btn = ctk.CTkButton(self.login, text="Login", font=("roboto", 16, "bold"), width=150, corner_radius=15, command=self.do_login)
-        save_btn.pack(pady=(10, 20), padx=10)
+        save_btn.pack(pady=10, padx=10)
+
+        if os.path.exists(Details.startUpFile):
+            fp_btn = ctk.CTkButton(self.login, text="Forget password!", font=("roboto", 14, "underline"), width=150, corner_radius=15,
+                                    fg_color=self.login.cget("fg_color"), hover_color=self.login.cget("fg_color"), text_color="red")
+            fp_btn.pack(pady=(10, 20), padx=10)
 
         self.login.update()
         self.login.minsize(self.login.winfo_width(), self.login.winfo_height())
@@ -555,5 +560,5 @@ class JExplorer:
 
 
 if __name__ == "__main__":
-    wf = JExplorer()
+    wf = SecureExplorer()
     wf.Browser()
