@@ -43,6 +43,7 @@ class SecureExplorer:
     home_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "home.png"), dark_image=Image.open(iconsPath + "home.png"), size=(25, 25))
     lock_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "lock.png"), dark_image=Image.open(iconsPath + "lock.png"), size=(25, 32))
     unlock_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "unlock.png"), dark_image=Image.open(iconsPath + "unlock.png"), size=(25, 32))
+    logout_icon = ctk.CTkImage(light_image=Image.open(iconsPath + "logout.png"), dark_image=Image.open(iconsPath + "logout.png"), size=(25, 25))
     currentItems = []
     isCopy = False
     copyitem = None
@@ -347,10 +348,14 @@ class SecureExplorer:
             privateKey = f.read()
 
         if os.path.isdir(destination):
+            if not has_secured_files(destination):
+                CTkMessagebox(title="Denied action!", message="The folder has not secured files!", icon="cancel")
+                return -1
             for item in scanRecurse(destination):
                 unhide_dir(destination)
                 filePath = Path(item)
-                decrypt(filePath, privateKey)
+                if str(filePath).endswith(encryptionExtension):
+                    decrypt(filePath, privateKey)
             # Refresh GUI
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
@@ -381,6 +386,10 @@ class SecureExplorer:
         self.ubber_left_tools_frame = ctk.CTkFrame(self.top, height=30, fg_color=self.top.cget("fg_color"))
         self.ubber_left_tools_frame.grid(row=0, column=0, sticky="w", pady=5)
 
+        self.logout_button = ctk.CTkButton(self.ubber_left_tools_frame, text="", fg_color=self.ubber_left_tools_frame.cget("fg_color"),
+                                         image=self.logout_icon, width=10, corner_radius=25, command=lambda: (self.top.destroy(), self.Login()))
+        self.logout_button.pack(side="left", anchor="w")
+        CTkToolTip(self.logout_button, message="Logout")
         self.home_button = ctk.CTkButton(self.ubber_left_tools_frame, text="", fg_color=self.ubber_left_tools_frame.cget("fg_color"),
                                          image=self.home_icon, width=10, corner_radius=25, command=self.home_menu)
         self.home_button.pack(side="left", anchor="w")
@@ -426,7 +435,7 @@ class SecureExplorer:
         self.un_lock_data = ctk.CTkButton(self.ubber_right_tools_frame, text="", image=self.unlock_icon, fg_color=self.ubber_right_tools_frame.cget("fg_color"),
                                        width=20, corner_radius=25, command= lambda: self.unlock(self.selected_label.cget("text")))
         self.un_lock_data.pack(side="right", anchor="e")
-        CTkToolTip(self.un_lock_data, message="Un Secure")
+        CTkToolTip(self.un_lock_data, message="Unsecure")
 
         self.selected_label = ctk.CTkLabel(self.top, text="", width=785, height=20, fg_color=self.top.cget("fg_color"), font=("roboto", 14), compound="left")
         self.selected_label.grid(row=1, column=0, pady=2)
@@ -504,7 +513,7 @@ class SecureExplorer:
             else:
                 os.startfile(self.absPath + self.remove_newline(btn))
 
-    def do_login(self):
+    def do_login(self, *args):
         invalid = "False"
         if os.path.exists(Details.startUpFile):
             if init_pass_to_compare(self.password_input.get()) == get_password():
@@ -513,21 +522,49 @@ class SecureExplorer:
                 invalid = "True"
         else:
             if self.password_input1.get() == self.password_input2.get():
-                if len(self.password_input2.get()) >= 8:
+                if len(self.password_input2.get()) >= 8 and len(self.secret_keyword.get()) >= 6:
                     open(Details.startUpFile, 'w').write("3ard el shazly el bambazz begneeeh")
-                    new_password(self.password_input1.get())
+                    new_password(self.password_input1.get(), self.secret_keyword.get())
                 else:
                     invalid = "Weak"
             else:
                 invalid = "True"
 
         if invalid == "Weak":
-            CTkMessagebox(title="Weak password!", message="Type stronger password!", icon="cancel")
+            CTkMessagebox(title="Weak cridintials!", message="Type stronger password or stronger keyword!", icon="cancel")
         elif invalid == "True":
             CTkMessagebox(title="Password error!", message="A7a ya zmiily", icon="cancel")
         else:
             self.login.destroy()
             self.Browser()
+    
+    def reset_password(self):
+        password = ctk.CTkInputDialog(title="Password requered!", text="Enter old password to confirm!")
+        pwd = password.get_input()
+        if pwd == "" or not pwd:
+            return -1
+        else:
+            if hashlib.sha512(pwd.encode()).hexdigest() == get_password():
+                os.remove(Details.startUpFile)
+                os.remove(Details.passwordFile)
+                self.login.destroy()
+                self.Login()
+            else:
+                CTkMessagebox(title="Invalid password", message="Password is not valid try again!", icon='cancel')
+
+    def forget_password(self):
+        keyword = ctk.CTkInputDialog(title="Secret keyword requered!", text="Enter secret keyword to confirm!")
+        kwd = keyword.get_input()
+        if kwd == "" or not kwd:
+            return -1
+        else:
+            if hashlib.sha512(kwd.encode()).hexdigest() == get_keyword():
+                os.remove(Details.startUpFile)
+                os.remove(Details.passwordFile)
+                self.login.destroy()
+                self.Login()
+            else:
+                CTkMessagebox(title="Invalid keyword", message="Keyword is not valid try again!", icon='cancel')
 
 
     def Login(self):
@@ -556,13 +593,27 @@ class SecureExplorer:
             self.password_input2.password_input()
             self.password_input2.bind("<Return>", self.do_login)
 
+            enter_secret_keyword = ctk.CTkLabel(self.login, text="Type a secret keyword (important to remember!)", 
+                                                font=("roboto", 15, "bold"), text_color="red")
+            enter_secret_keyword.pack(pady=(20, 10), padx=40)
+
+            self.secret_keyword = CTkInput(self.login, width=300, height=35, border_width=1)
+            self.secret_keyword.pack(pady=10, padx=10)
+            self.secret_keyword.bind("<Return>", self.do_login)
+
         save_btn = ctk.CTkButton(self.login, text="Login", font=("roboto", 16, "bold"), width=150, corner_radius=15, command=self.do_login)
-        save_btn.pack(pady=10, padx=10)
+        save_btn.pack(pady=(10, 20), padx=10)
 
         if os.path.exists(Details.startUpFile):
+            rp_btn = ctk.CTkButton(self.login, text="Reset password", font=("roboto", 14, "underline"), width=150, corner_radius=15,
+                                    fg_color=self.login.cget("fg_color"), hover_color=self.login.cget("fg_color"), text_color="white",
+                                    command=self.reset_password)
+            rp_btn.pack(pady=5, padx=10)
+            
             fp_btn = ctk.CTkButton(self.login, text="Forget password!", font=("roboto", 14, "underline"), width=150, corner_radius=15,
-                                    fg_color=self.login.cget("fg_color"), hover_color=self.login.cget("fg_color"), text_color="red")
-            fp_btn.pack(pady=(10, 20), padx=10)
+                                    fg_color=self.login.cget("fg_color"), hover_color=self.login.cget("fg_color"), text_color="red",
+                                    command=self.forget_password)
+            fp_btn.pack(pady=(0, 10), padx=10)
 
         self.login.update()
         self.login.minsize(self.login.winfo_width(), self.login.winfo_height())
@@ -574,4 +625,4 @@ class SecureExplorer:
 
 if __name__ == "__main__":
     wf = SecureExplorer()
-    wf.Browser()
+    wf.Login()
