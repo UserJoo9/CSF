@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 encryptionExtension = ".0xAtlas2p0"
+delimiter = b'$%&*#@!+=()^'
 
 def scanRecurse(baseDir):
     
@@ -48,8 +49,6 @@ def encrypt(dataFile, publicKey):
 
     encryptedFile = fileName + encryptionExtension
 
-    delimiter = b'$'
-
     with open(encryptedFile, 'wb') as f:
         [f.write(x) for x in (encryptedSessionKey, cipher_extension.nonce, tag_extension,
                                encrypted_extension, delimiter, cipher.nonce, tag, ciphertext)]
@@ -78,7 +77,7 @@ def decrypt(dataFile, privateKey):
 
         while True:
             byte = f.read(1)
-            if byte == b'$':
+            if byte == delimiter:
                 break
             else:
                 cipher_extension += byte

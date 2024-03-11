@@ -7,16 +7,28 @@ from pathlib import Path
 from ProtectionEngine import encryptionExtension
 
 def hide_file(filename):
-    win32api.SetFileAttributes(filename,win32con.FILE_ATTRIBUTE_HIDDEN)
+    try:
+        win32api.SetFileAttributes(filename,win32con.FILE_ATTRIBUTE_HIDDEN)
+    except Exception as f:
+        print("Error when hidding file, ", f)
 
 def unhide_file(filename):
-    win32api.SetFileAttributes(filename,win32con.FILE_ATTRIBUTE_NORMAL)
+    try:
+        win32api.SetFileAttributes(filename,win32con.FILE_ATTRIBUTE_NORMAL)
+    except Exception as f:
+        print("Error when unhidding file, ", f)
 
 def hide_dir(dir):
-    ctypes.windll.kernel32.SetFileAttributesW(dir, win32con.FILE_ATTRIBUTE_HIDDEN)
+    try:
+        ctypes.windll.kernel32.SetFileAttributesW(dir, win32con.FILE_ATTRIBUTE_HIDDEN)
+    except Exception as f:
+        print("Error when hidding dir, ", f)
 
 def unhide_dir(dir):
-    ctypes.windll.kernel32.SetFileAttributesW(dir, win32con.FILE_ATTRIBUTE_NORMAL)
+    try:
+        ctypes.windll.kernel32.SetFileAttributesW(dir, win32con.FILE_ATTRIBUTE_NORMAL)
+    except Exception as f:
+        print("Error when unhidding dir, ", f)
 
 def is_file_hidden(dest):
     return bool(os.stat(dest).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)

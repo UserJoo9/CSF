@@ -8,6 +8,7 @@ from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from shutil import copytree, rmtree
 import threading
+from KeyGen import generate_keys
 from EncryptPassword import *
 from ProtectionEngine import scanRecurse, encrypt, decrypt, encryptionExtension
 from pathlib import Path
@@ -189,8 +190,6 @@ class SecureExplorer:
         return self.absPath
 
     def return_forward(self, *args):
-        print(">>>> 1 ", self.absPath)
-        print(">>>> 2 ", self.lastAbsPath)
         if self.lastAbsPath == r"" or self.absPath == r"" or self.lastAbsPath == self.absPath or len(self.absPath) > len(self.lastAbsPath):
             pass
         else:
@@ -303,11 +302,9 @@ class SecureExplorer:
             CTkMessagebox(title="Action error!", message="Select a file or folder to secure it.", icon="cancel")
             return -1
         destination = self.absPath + dest
-        with open('database/publicKey.pem', 'rb') as f:
+
+        with open(Details.publicKeyPath, 'rb') as f:
             pubKey = f.read()
-        if dest.endswith(encryptionExtension):
-            CTkMessagebox(title="Action error!", message="File is already secured!", icon="cancel")
-            return -1
 
         if os.path.isdir(destination):
             for item in scanRecurse(destination):
@@ -324,6 +321,9 @@ class SecureExplorer:
             self.selected_label.configure(text="", image=self.small_folder_icon)
             print("Directory Locked")
         else:
+            if dest.endswith(encryptionExtension):
+                CTkMessagebox(title="Action error!", message="File is already secured!", icon="cancel")
+                return -1
             if '.' not in dest:
                 CTkMessagebox(title="File type error!", message="Unsupported supported file type!", icon="cancel")
                 return -1
@@ -339,17 +339,14 @@ class SecureExplorer:
         if any(dest == i for i in self.listDisks()):
             CTkMessagebox(title="Action error!", message="Select a secured file or folder to unsecure it.", icon="cancel")
             return -1
-        destination = self.absPath + dest
-        if os.path.isfile(destination) and not destination.endswith(encryptionExtension):
-            CTkMessagebox(title="File type error!", message="File is not valid to unsecure", icon="cancel")
-            return -1
 
-        with open('database/privateKey.pem', 'rb') as f:
+        destination = self.absPath + dest
+        with open(Details.privateKeyPath, 'rb') as f:
             privateKey = f.read()
 
         if os.path.isdir(destination):
             if not has_secured_files(destination):
-                CTkMessagebox(title="Denied action!", message="The folder has not secured files!", icon="cancel")
+                CTkMessagebox(title="Denied action!", message="The folder haven't secured files!", icon="cancel")
                 return -1
             for item in scanRecurse(destination):
                 unhide_dir(destination)
@@ -360,8 +357,10 @@ class SecureExplorer:
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
             print("Directory Unlocked")
-
         else:
+            if not destination.endswith(encryptionExtension):
+                CTkMessagebox(title="File type error!", message="File is not valid to unsecure", icon="cancel")
+                return -1
             unhide_file(destination.split(".")[0] + encryptionExtension)
             filePath = Path(destination)
             decrypt(destination, privateKey)
@@ -529,7 +528,6 @@ class SecureExplorer:
                     invalid = "Weak"
             else:
                 invalid = "True"
-
         if invalid == "Weak":
             CTkMessagebox(title="Weak cridintials!", message="Type stronger password or stronger keyword!", icon="cancel")
         elif invalid == "True":
@@ -566,8 +564,19 @@ class SecureExplorer:
             else:
                 CTkMessagebox(title="Invalid keyword", message="Keyword is not valid try again!", icon='cancel')
 
+    def check_hidden_database(self, *args):
+        if not is_dir_hidden(Details.databasePath):
+            hide_dir(Details.databasePath)
 
     def Login(self):
+        if not os.path.exists(Details.databasePath):
+            os.mkdir(Details.databasePath)
+            hide_dir(Details.databasePath)
+            generate_keys()
+
+        if not os.path.exists(Details.publicKeyPath) or not os.path.exists(Details.privateKeyPath):
+            generate_keys()
+
         self.login = ctk.CTk()
         self.login.title("Login")
         if os.path.exists(Details.startUpFile):
@@ -620,6 +629,7 @@ class SecureExplorer:
         x_cordinate = int((self.login.winfo_screenwidth() / 2) - (self.login.winfo_width() / 2))
         y_cordinate = int((self.login.winfo_screenheight() / 2) - (self.login.winfo_height() / 2))
         self.login.geometry("{}+{}".format(x_cordinate, y_cordinate - 50))
+        self.login.bind("<Configure>", self.check_hidden_database)
         self.login.mainloop()
 
 
