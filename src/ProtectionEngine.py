@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 encryptionExtension = ".0xAtlas2p0"
-delimiter = b'$%&*#@!+=()^'
+delimiter = b'$'
 
 def scanRecurse(baseDir):
     

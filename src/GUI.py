@@ -363,7 +363,7 @@ class SecureExplorer:
                 return -1
             unhide_file(destination.split(".")[0] + encryptionExtension)
             filePath = Path(destination)
-            decrypt(destination, privateKey)
+            decrypt(filePath, privateKey)
             # Refresh GUI
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
