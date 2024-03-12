@@ -8,7 +8,7 @@ implemented with powerful **UI** and support dark mode.
 
 ## Application
 
-![Login window](https://ibb.co/QbBQSk3)
+![Login window](Login window.png)
 
 ![Computer partetions](https://ibb.co/rx7DyJ4)
 
