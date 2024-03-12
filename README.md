@@ -8,9 +8,8 @@ implemented with powerful **UI** and support dark mode.
 
 ## Application
 
-![Login window](Login window.png)
+![Login window](https://github.com/UserJoo9/CSF/assets/82382970/ca4c1e5a-1139-4c6b-87ed-3633d51abbac)
 
-![Computer partetions](https://ibb.co/rx7DyJ4)
+![Computer partetions](https://github.com/UserJoo9/CSF/assets/82382970/8b8ffd59-2e53-4c06-b1f1-2c078ec1db1f)
 
-![Folders & Files](https://ibb.co/PF8XcQg)
-
+![Folders and files](https://github.com/UserJoo9/CSF/assets/82382970/d42b655e-f557-445b-a82e-1e1b92549f80)
