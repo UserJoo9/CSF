@@ -13,3 +13,8 @@ implemented with powerful **UI** and support dark mode.
 ![Computer partetions](https://github.com/UserJoo9/CSF/assets/82382970/8b8ffd59-2e53-4c06-b1f1-2c078ec1db1f)
 
 ![Folders and files](https://github.com/UserJoo9/CSF/assets/82382970/d42b655e-f557-445b-a82e-1e1b92549f80)
+
+## How to secure data
+
+https://github.com/UserJoo9/CSF/assets/82382970/e10fd9bf-8652-4a6b-99c9-b2bba7c3a9a8
+
