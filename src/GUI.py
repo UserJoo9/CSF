@@ -8,11 +8,11 @@ from CTkToolTip import CTkToolTip
 from CTkMessagebox import CTkMessagebox
 from shutil import copytree, rmtree
 import threading
-from KeyGen import generate_keys
 from EncryptPassword import *
-from ProtectionEngine import scanRecurse, encrypt, decrypt, encryptionExtension
+from ProtectionEngine import scanRecurse, encrypt, decrypt, encryptionExtension, public_key, private_key
 from pathlib import Path
 from HideManager import hide_file, hide_dir, unhide_file, unhide_dir, is_file_hidden, is_dir_hidden, has_secured_files
+from UserProtection import *
 
 
 class SecureExplorer:
@@ -303,15 +303,12 @@ class SecureExplorer:
             return -1
         destination = self.absPath + dest
 
-        with open(Details.publicKeyPath, 'rb') as f:
-            pubKey = f.read()
-
         if os.path.isdir(destination):
             for item in scanRecurse(destination):
                 filePath = Path(item)
                 if str(filePath).endswith(encryptionExtension):
                     continue
-                reply = encrypt(filePath, pubKey)
+                reply = encrypt(filePath, public_key)
                 hide_dir(destination)
                 if reply == -1:
                     CTkMessagebox(title="File type error!", message="Unsupported supported file type!", icon="cancel")
@@ -328,7 +325,7 @@ class SecureExplorer:
                 CTkMessagebox(title="File type error!", message="Unsupported supported file type!", icon="cancel")
                 return -1
             filePath = Path(destination)
-            reply = encrypt(filePath, pubKey)
+            reply = encrypt(filePath, public_key)
             hide_file(destination.split(".")[0] + encryptionExtension)
             # Refresh GUI
             self.layerSearch(self.absPath)
@@ -341,8 +338,6 @@ class SecureExplorer:
             return -1
 
         destination = self.absPath + dest
-        with open(Details.privateKeyPath, 'rb') as f:
-            privateKey = f.read()
 
         if os.path.isdir(destination):
             if not has_secured_files(destination):
@@ -352,7 +347,7 @@ class SecureExplorer:
                 unhide_dir(destination)
                 filePath = Path(item)
                 if str(filePath).endswith(encryptionExtension):
-                    decrypt(filePath, privateKey)
+                    decrypt(filePath, private_key)
             # Refresh GUI
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
@@ -363,7 +358,7 @@ class SecureExplorer:
                 return -1
             unhide_file(destination.split(".")[0] + encryptionExtension)
             filePath = Path(destination)
-            decrypt(filePath, privateKey)
+            decrypt(filePath, private_key)
             # Refresh GUI
             self.layerSearch(self.absPath)
             self.selected_label.configure(text="", image=self.small_folder_icon)
@@ -374,7 +369,7 @@ class SecureExplorer:
     def Browser(self):
         self.top = ctk.CTk()
         self.top.minsize(width=800, height=600)
-        self.top.title("Secure Explorer")
+        self.top.title(Details.applicationName)
         self.top.bind("<Alt-Left>", self.return_back)
         self.top.bind("<Alt-Right>", self.return_forward)
         self.top.bind("<Delete>", lambda e:self.delete(self.buttonPressed))
@@ -514,16 +509,17 @@ class SecureExplorer:
 
     def do_login(self, *args):
         invalid = "False"
-        if os.path.exists(Details.startUpFile):
+        if check_registry_value(started_up):
             if init_pass_to_compare(self.password_input.get()) == get_password():
-                open(Details.startUpFile, 'w').write("3ard el shazly el bambazz begneeeh")
+                write_to_registry(started_up, "3ard el shazly el bambazz begneeeh")
             else:
                 invalid = "True"
         else:
             if self.password_input1.get() == self.password_input2.get():
                 if len(self.password_input2.get()) >= 8 and len(self.secret_keyword.get()) >= 6:
-                    open(Details.startUpFile, 'w').write("3ard el shazly el bambazz begneeeh")
-                    new_password(self.password_input1.get(), self.secret_keyword.get())
+                    new_password(self.password_input1.get())
+                    new_keyword(self.secret_keyword.get())
+                    write_to_registry(started_up, "3ard el shazly el bambazz begneeeh")
                 else:
                     invalid = "Weak"
             else:
@@ -537,49 +533,57 @@ class SecureExplorer:
             self.Browser()
     
     def reset_password(self):
-        password = ctk.CTkInputDialog(title="Password requered!", text="Enter old password to confirm!")
+        password = ctk.CTkInputDialog(title="Password required!", text="Enter old password to confirm!")
         pwd = password.get_input()
         if pwd == "" or not pwd:
             return -1
         else:
             if hashlib.sha512(pwd.encode()).hexdigest() == get_password():
-                os.remove(Details.startUpFile)
-                os.remove(Details.passwordFile)
                 self.login.destroy()
                 self.Login()
             else:
                 CTkMessagebox(title="Invalid password", message="Password is not valid try again!", icon='cancel')
 
     def forget_password(self):
-        keyword = ctk.CTkInputDialog(title="Secret keyword requered!", text="Enter secret keyword to confirm!")
-        kwd = keyword.get_input()
-        if kwd == "" or not kwd:
-            return -1
-        else:
-            if hashlib.sha512(kwd.encode()).hexdigest() == get_keyword():
-                os.remove(Details.startUpFile)
-                os.remove(Details.passwordFile)
-                self.login.destroy()
-                self.Login()
-            else:
-                CTkMessagebox(title="Invalid keyword", message="Keyword is not valid try again!", icon='cancel')
+        rst = ctk.CTk()
+        rst.title("Forgot password")
+        rst.resizable(0,0)
+        secret_k = ctk.CTkLabel(rst, text="Enter secretkey to confirm identity!", font=("roboto", 22, "bold"))
+        secret_k.pack(pady=20, padx=40)
 
-    def check_hidden_database(self, *args):
-        if not is_dir_hidden(Details.databasePath):
-            hide_dir(Details.databasePath)
+        self.secret_k = CTkInput(rst, width=300, height=35, border_width=1)
+        self.secret_k.pack(pady=10, padx=10)
+
+        def go(*args):
+            kwd = self.secret_k.get()
+            if kwd == "" or not kwd:
+                exit()
+            else:
+                if hashlib.sha512(kwd.encode()).hexdigest() == get_keyword():
+                    try:
+                        rst.destroy()
+                        self.Login()
+                    except:
+                        pass
+                else:
+                    CTkMessagebox(title="Invalid keyword", message="Keyword is not valid try again!", icon='cancel')
+
+        self.secret_k.bind("<Return>", go)
+        save_btn = ctk.CTkButton(rst, text="Confirm", font=("roboto", 16, "bold"), width=150, corner_radius=15, command=go)
+        save_btn.pack(pady=(10, 20), padx=10)
+
+        rst.update()
+        x_cordinate = int((rst.winfo_screenwidth() / 2) - (rst.winfo_width() / 2))
+        y_cordinate = int((rst.winfo_screenheight() / 2) - (rst.winfo_height() / 2))
+        rst.geometry("{}+{}".format(x_cordinate, y_cordinate - 50))
+        rst.mainloop()
 
     def Login(self):
-        if not os.path.exists(Details.databasePath):
-            os.mkdir(Details.databasePath)
-            hide_dir(Details.databasePath)
-            generate_keys()
-
-        if not os.path.exists(Details.publicKeyPath) or not os.path.exists(Details.privateKeyPath):
-            generate_keys()
-
         self.login = ctk.CTk()
         self.login.title("Login")
-        if os.path.exists(Details.startUpFile):
+        if not check_registry_value(passwd) and check_registry_value(started_up):
+            self.forget_password()
+        if check_registry_value(started_up):
             enter_password = ctk.CTkLabel(self.login, text="Enter password", font=("roboto", 22, "bold"))
             enter_password.pack(pady=20, padx=40)
 
@@ -613,7 +617,7 @@ class SecureExplorer:
         save_btn = ctk.CTkButton(self.login, text="Login", font=("roboto", 16, "bold"), width=150, corner_radius=15, command=self.do_login)
         save_btn.pack(pady=(10, 20), padx=10)
 
-        if os.path.exists(Details.startUpFile):
+        if check_registry_value(started_up):
             rp_btn = ctk.CTkButton(self.login, text="Reset password", font=("roboto", 14, "underline"), width=150, corner_radius=15,
                                     fg_color=self.login.cget("fg_color"), hover_color=self.login.cget("fg_color"), text_color="white",
                                     command=self.reset_password)
@@ -629,7 +633,6 @@ class SecureExplorer:
         x_cordinate = int((self.login.winfo_screenwidth() / 2) - (self.login.winfo_width() / 2))
         y_cordinate = int((self.login.winfo_screenheight() / 2) - (self.login.winfo_height() / 2))
         self.login.geometry("{}+{}".format(x_cordinate, y_cordinate - 50))
-        self.login.bind("<Configure>", self.check_hidden_database)
         self.login.mainloop()
 
 
